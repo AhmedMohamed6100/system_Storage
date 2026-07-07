@@ -1,5 +1,18 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
-import { Category, Unit, Product, Supplier, SupplierPayment, Movement, Purchase, Invoice, Transfer, Expense } from '../types';
+import {
+  Category,
+  Unit,
+  Product,
+  Supplier,
+  SupplierPayment,
+  Movement,
+  Purchase,
+  Invoice,
+  Transfer,
+  Expense,
+  DailyReport,
+} from '../types';
+
 import { categoriesService } from '../services/categoriesService';
 import { unitsService } from '../services/unitsService';
 import { productsService } from '../services/productsService';
@@ -9,6 +22,7 @@ import { purchasesService } from '../services/purchasesService';
 import { invoicesService } from '../services/invoicesService';
 import { transfersService } from '../services/transfersService';
 import { expensesService } from '../services/expensesService';
+import { dailyReportsService } from '../services/dailyReportsService';
 
 interface AppContextType {
   categories: Category[];
@@ -21,6 +35,8 @@ interface AppContextType {
   invoices: Invoice[];
   transfers: Transfer[];
   expenses: Expense[];
+  dailyReports: DailyReport[];
+
   refreshAll: () => void;
   refreshCategories: () => void;
   refreshUnits: () => void;
@@ -31,6 +47,7 @@ interface AppContextType {
   refreshInvoices: () => void;
   refreshTransfers: () => void;
   refreshExpenses: () => void;
+  refreshDailyReports: () => void;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
@@ -47,18 +64,34 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [transfers, setTransfers] = useState<Transfer[]>(() => transfersService.getAll());
   const [expenses, setExpenses] = useState<Expense[]>(() => expensesService.getAll());
 
+  const [dailyReports, setDailyReports] = useState<DailyReport[]>(() =>
+    dailyReportsService.getAll()
+  );
+
   const refreshCategories = useCallback(() => setCategories(categoriesService.getAll()), []);
+
   const refreshUnits = useCallback(() => setUnits(unitsService.getAll()), []);
+
   const refreshProducts = useCallback(() => setProducts(productsService.getAll()), []);
+
   const refreshSuppliers = useCallback(() => {
     setSuppliers(suppliersService.getAll());
     setSupplierPayments(suppliersService.getPayments());
   }, []);
+
   const refreshMovements = useCallback(() => setMovements(movementsService.getAll()), []);
+
   const refreshPurchases = useCallback(() => setPurchases(purchasesService.getAll()), []);
+
   const refreshInvoices = useCallback(() => setInvoices(invoicesService.getAll()), []);
+
   const refreshTransfers = useCallback(() => setTransfers(transfersService.getAll()), []);
+
   const refreshExpenses = useCallback(() => setExpenses(expensesService.getAll()), []);
+
+  const refreshDailyReports = useCallback(() => {
+    setDailyReports(dailyReportsService.getAll());
+  }, []);
 
   const refreshAll = useCallback(() => {
     refreshCategories();
@@ -70,16 +103,48 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     refreshInvoices();
     refreshTransfers();
     refreshExpenses();
-  }, [refreshCategories, refreshUnits, refreshProducts, refreshSuppliers, refreshMovements, refreshPurchases, refreshInvoices, refreshTransfers, refreshExpenses]);
+    refreshDailyReports();
+  }, [
+    refreshCategories,
+    refreshUnits,
+    refreshProducts,
+    refreshSuppliers,
+    refreshMovements,
+    refreshPurchases,
+    refreshInvoices,
+    refreshTransfers,
+    refreshExpenses,
+    refreshDailyReports,
+  ]);
 
   return (
-    <AppContext.Provider value={{
-      categories, units, products, suppliers, supplierPayments,
-      movements, purchases, invoices, transfers, expenses,
-      refreshAll, refreshCategories, refreshUnits, refreshProducts,
-      refreshSuppliers, refreshMovements, refreshPurchases,
-      refreshInvoices, refreshTransfers, refreshExpenses,
-    }}>
+    <AppContext.Provider
+      value={{
+        categories,
+        units,
+        products,
+        suppliers,
+        supplierPayments,
+        movements,
+        purchases,
+        invoices,
+        transfers,
+        expenses,
+        dailyReports,
+
+        refreshAll,
+        refreshCategories,
+        refreshUnits,
+        refreshProducts,
+        refreshSuppliers,
+        refreshMovements,
+        refreshPurchases,
+        refreshInvoices,
+        refreshTransfers,
+        refreshExpenses,
+        refreshDailyReports,
+      }}
+    >
       {children}
     </AppContext.Provider>
   );
@@ -87,6 +152,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
 export function useApp() {
   const ctx = useContext(AppContext);
-  if (!ctx) throw new Error('useApp must be used within AppProvider');
+
+  if (!ctx) {
+    throw new Error('useApp must be used within AppProvider');
+  }
+
   return ctx;
 }

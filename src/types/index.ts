@@ -130,3 +130,13 @@ export interface AuthState {
   isAuthenticated: boolean;
   currentUser: User | null;
 }
+export interface DailyReport {
+  id: string;
+  date: string;
+  invoicesCount: number;
+  totalSales: number;
+  expenses: number;
+  netProfit: number;
+  notes: string;
+  createdAt: string;
+}

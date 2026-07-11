@@ -667,7 +667,9 @@ export default function InvoicesPage() {
         <form onSubmit={handleDailyReport} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm mb-1 text-right">التاريخ</label>
+              <label className="block text-sm mb-1 text-right text-gray-700 dark:text-gray-300">
+                التاريخ
+              </label>
 
               <input
                 type="date"
@@ -675,12 +677,15 @@ export default function InvoicesPage() {
                 onChange={(e) =>
                   setDailyReport((f) => ({ ...f, date: e.target.value }))
                 }
-                className="w-full px-3 py-2 border rounded-lg"
+                className="w-full px-3 py-2 border rounded-lg bg-white text-gray-900 border-gray-300
+        dark:bg-gray-700 dark:text-white dark:border-gray-600"
               />
             </div>
 
             <div>
-              <label className="block text-sm mb-1 text-right">الوردية</label>
+              <label className="block text-sm mb-1 text-right text-gray-700 dark:text-gray-300">
+                الوردية
+              </label>
 
               <select
                 value={dailyReport.shift}
@@ -690,18 +695,18 @@ export default function InvoicesPage() {
                     shift: e.target.value,
                   }))
                 }
-                className="w-full px-3 py-2 border rounded-lg"
+                className="w-full px-3 py-2 border rounded-lg bg-white text-gray-900 border-gray-300
+        dark:bg-gray-700 dark:text-white dark:border-gray-600"
               >
                 <option value="">اختر الوردية</option>
                 <option value="صباحية">صباحية</option>
                 <option value="مسائية">مسائية</option>
-                <option value="ليلية">ليلية</option>
               </select>
             </div>
           </div>
 
           <div>
-            <label className="block text-sm mb-1 text-right">
+            <label className="block text-sm mb-1 text-right text-gray-700 dark:text-gray-300">
               عدد الفواتير
             </label>
 
@@ -714,13 +719,14 @@ export default function InvoicesPage() {
                   invoicesCount: e.target.value,
                 }))
               }
-              className="w-full px-3 py-2 border rounded-lg"
+              className="w-full px-3 py-2 border rounded-lg bg-white text-gray-900 border-gray-300
+      dark:bg-gray-700 dark:text-white dark:border-gray-600"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm mb-1 text-right">
+              <label className="block text-sm mb-1 text-right text-gray-700 dark:text-gray-300">
                 إجمالي المبيعات
               </label>
 
@@ -730,12 +736,15 @@ export default function InvoicesPage() {
                 onChange={(e) =>
                   setDailyReport((f) => ({ ...f, totalSales: e.target.value }))
                 }
-                className="w-full px-3 py-2 border rounded-lg"
+                className="w-full px-3 py-2 border rounded-lg bg-white text-gray-900 border-gray-300
+        dark:bg-gray-700 dark:text-white dark:border-gray-600"
               />
             </div>
 
             <div>
-              <label className="block text-sm mb-1 text-right">المصاريف</label>
+              <label className="block text-sm mb-1 text-right text-gray-700 dark:text-gray-300">
+                المصاريف
+              </label>
 
               <input
                 type="number"
@@ -743,13 +752,16 @@ export default function InvoicesPage() {
                 onChange={(e) =>
                   setDailyReport((f) => ({ ...f, expenses: e.target.value }))
                 }
-                className="w-full px-3 py-2 border rounded-lg"
+                className="w-full px-3 py-2 border rounded-lg bg-white text-gray-900 border-gray-300
+        dark:bg-gray-700 dark:text-white dark:border-gray-600"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm mb-1 text-right">ملاحظات</label>
+            <label className="block text-sm mb-1 text-right text-gray-700 dark:text-gray-300">
+              ملاحظات
+            </label>
 
             <input
               type="text"
@@ -757,12 +769,15 @@ export default function InvoicesPage() {
               onChange={(e) =>
                 setDailyReport((f) => ({ ...f, notes: e.target.value }))
               }
-              className="w-full px-3 py-2 border rounded-lg"
+              className="w-full px-3 py-2 border rounded-lg bg-white text-gray-900 border-gray-300
+      dark:bg-gray-700 dark:text-white dark:border-gray-600"
             />
           </div>
 
-          <div className="bg-gray-100 rounded-lg p-3 text-center">
-            <p className="text-sm">صافي الربح</p>
+          <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-3 text-center">
+            <p className="text-sm text-gray-700 dark:text-gray-300">
+              صافي الربح
+            </p>
 
             <p className="text-2xl font-bold text-green-600">
               {formatCurrency(dailyNetProfit)}

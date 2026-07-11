@@ -38,73 +38,110 @@ export const productsService = {
     return true;
   },
 
-  addIncoming(productId: string, quantity: number, price: number | undefined, supplierId: string | undefined, date: string, notes: string, userId: string): boolean {
-    const products = this.getAll();
-    const idx = products.findIndex(p => p.id === productId);
-    if (idx === -1) return false;
-    const prev = products[idx].currentQuantity;
-    products[idx].currentQuantity += quantity;
-    setItem(STORAGE_KEYS.PRODUCTS, products);
-    movementsService.record({
-      type: 'incoming',
-      productId,
-      categoryId: products[idx].categoryId,
-      quantity,
-      previousQuantity: prev,
-      newQuantity: products[idx].currentQuantity,
-      price,
-      supplierId,
-      date,
-      notes,
-      userId,
-    });
-    return true;
-  },
+ addIncoming(
+  productId: string, 
+  quantity: number, 
+  price: number | undefined, 
+  supplierId: string | undefined, 
+  date: string, 
+  notes: string, 
+  shift: 'morning' | 'evening',   // ← أضفنا الوردية
+  userId: string
+): boolean {
+  
+  const products = this.getAll();
+  const idx = products.findIndex(p => p.id === productId);
+  if (idx === -1) return false;
 
-  addOutgoing(productId: string, quantity: number, date: string, notes: string, userId: string): boolean {
-    const products = this.getAll();
-    const idx = products.findIndex(p => p.id === productId);
-    if (idx === -1) return false;
-    if (products[idx].currentQuantity < quantity) return false;
-    const prev = products[idx].currentQuantity;
-    products[idx].currentQuantity -= quantity;
-    setItem(STORAGE_KEYS.PRODUCTS, products);
-    movementsService.record({
-      type: 'outgoing',
-      productId,
-      categoryId: products[idx].categoryId,
-      quantity,
-      previousQuantity: prev,
-      newQuantity: products[idx].currentQuantity,
-      date,
-      notes,
-      userId,
-    });
-    return true;
-  },
+  const prev = products[idx].currentQuantity;
+  products[idx].currentQuantity += quantity;
 
-  manualEdit(productId: string, newQuantity: number, notes: string, userId: string): boolean {
-    const products = this.getAll();
-    const idx = products.findIndex(p => p.id === productId);
-    if (idx === -1) return false;
-    const prev = products[idx].currentQuantity;
-    const diff = Math.abs(newQuantity - prev);
-    products[idx].currentQuantity = newQuantity;
-    setItem(STORAGE_KEYS.PRODUCTS, products);
-    movementsService.record({
-      type: 'manual_edit',
-      productId,
-      categoryId: products[idx].categoryId,
-      quantity: diff,
-      previousQuantity: prev,
-      newQuantity,
-      date: today(),
-      notes: notes || 'تعديل يدوي للكمية',
-      userId,
-    });
-    return true;
-  },
+  setItem(STORAGE_KEYS.PRODUCTS, products);
 
+  movementsService.record({
+    type: 'incoming',
+    productId,
+    categoryId: products[idx].categoryId,
+    quantity,
+    previousQuantity: prev,
+    newQuantity: products[idx].currentQuantity,
+    price,
+    supplierId,
+    date,
+    notes,
+    shift,                    // ← أضفنا الوردية هنا
+    userId,
+  });
+
+  return true;
+},
+addOutgoing(
+  productId: string,
+  quantity: number,
+  date: string,
+  notes: string,
+  shift: 'morning' | 'evening',
+  userId: string
+): boolean {
+
+  const products = this.getAll();
+  const idx = products.findIndex(p => p.id === productId);
+  if (idx === -1) return false;
+
+  if (products[idx].currentQuantity < quantity) return false;
+
+  const prev = products[idx].currentQuantity;
+  products[idx].currentQuantity -= quantity;
+
+  setItem(STORAGE_KEYS.PRODUCTS, products);
+
+  movementsService.record({
+    type: 'outgoing',
+    productId,
+    categoryId: products[idx].categoryId,
+    quantity,
+    previousQuantity: prev,
+    newQuantity: products[idx].currentQuantity,
+    date,
+    notes,
+    shift,
+    userId,
+  });
+
+  return true;
+},
+
+   manualEdit(
+  productId: string,
+  newQuantity: number,
+  notes: string,
+  shift: 'morning' | 'evening',
+  userId: string,
+): boolean {
+  const products = this.getAll();
+  const idx = products.findIndex(p => p.id === productId);
+  if (idx === -1) return false;
+  const prev = products[idx].currentQuantity;
+  const diff = Math.abs(newQuantity - prev);
+  products[idx].currentQuantity = newQuantity;
+  setItem(STORAGE_KEYS.PRODUCTS, products);
+
+  movementsService.record({
+    type: 'manual_edit',
+    productId,
+    categoryId: products[idx].categoryId,
+    quantity: diff,
+    previousQuantity: prev,
+    newQuantity,
+    date: today(),
+    notes: notes || 'تعديل يدوي للكمية',
+    shift,
+    userId,
+  });
+
+  return true;
+},
+ 
   getTotalInventoryValue(): number {
     return this.getAll().reduce((sum, p) => sum + p.currentQuantity * p.purchasePrice, 0);
   },

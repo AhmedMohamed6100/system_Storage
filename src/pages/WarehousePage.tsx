@@ -31,12 +31,12 @@ interface ProductForm {
 interface MovementForm {
   productId: string;
   quantity: string;
-  price: string;
-  supplierId: string;
+  price?: string; // لو محتاجه في الصادر
+  supplierId?: string; // لو محتاجه في الوارد
   date: string;
   notes: string;
+  shift: "morning" | "evening" | ""; // ← الجديد
 }
-
 interface EditForm {
   name: string;
   categoryId: string;
@@ -45,6 +45,7 @@ interface EditForm {
   sellingPrice: string;
   newQuantity: string;
   quantityNote: string;
+  shift: "morning" | "evening";
 }
 
 const emptyProductForm: ProductForm = {
@@ -53,9 +54,14 @@ const emptyProductForm: ProductForm = {
   unitId: "",
   purchasePrice: "0.00",
   sellingPrice: "0.00",
-  openingQuantity: "0",
+  openingQuantity: "0.00",
 };
-
+export const formatQuantity = (value: number) => {
+  return Number(value).toLocaleString("ar-EG", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  });
+};
 export default function WarehousePage() {
   const {
     categories,
@@ -81,10 +87,11 @@ export default function WarehousePage() {
     name: "",
     categoryId: "",
     unitId: "",
-    purchasePrice: "0",
-    sellingPrice: "0",
-    newQuantity: "0",
+    purchasePrice: "0.00",
+    sellingPrice: "0.00",
+    newQuantity: "0.00",
     quantityNote: "",
+    shift: "morning",
   });
   const [productForm, setProductForm] = useState<ProductForm>(emptyProductForm);
   const [movementForm, setMovementForm] = useState<MovementForm>({
@@ -94,6 +101,7 @@ export default function WarehousePage() {
     supplierId: "",
     date: new Date().toISOString().split("T")[0],
     notes: "",
+    shift: "",
   });
   const productOptions = useMemo(
     () =>
@@ -144,7 +152,7 @@ export default function WarehousePage() {
       showToast("يرجى ملء جميع الحقول المطلوبة", "error");
       return;
     }
-    const qty = parseInt(productForm.openingQuantity) || 0;
+    const qty = parseFloat(productForm.openingQuantity) || 0;
     productsService.add({
       name: productForm.name.trim(),
       categoryId: productForm.categoryId,
@@ -162,20 +170,24 @@ export default function WarehousePage() {
 
   const handleIncoming = (e: React.FormEvent) => {
     e.preventDefault();
-    const qty = parseInt(movementForm.quantity);
-    if (!movementForm.productId || !qty || qty <= 0) {
-      showToast("يرجى اختيار المنتج وإدخال الكمية", "error");
+
+    const qty = parseFloat(movementForm.quantity) || 0;
+    if (!movementForm.productId || qty <= 0 || !movementForm.shift) {
+      showToast("يرجى ملء الحقول المطلوبة (المنتج، الكمية، الوردية)", "error");
       return;
     }
+
     productsService.addIncoming(
       movementForm.productId,
       qty,
-      parseFloat(movementForm.price) || undefined,
+      movementForm.price ? parseFloat(movementForm.price) : undefined,
       movementForm.supplierId || undefined,
-      movementForm.date,
-      movementForm.notes,
+      movementForm.date || new Date().toISOString().split("T")[0],
+      movementForm.notes || "",
+      movementForm.shift as "morning" | "evening",
       currentUser?.id || "system",
     );
+
     refreshProducts();
     refreshMovements();
     showToast("تمت عملية الوارد بنجاح", "success");
@@ -185,16 +197,18 @@ export default function WarehousePage() {
 
   const handleOutgoing = (e: React.FormEvent) => {
     e.preventDefault();
-    const qty = parseInt(movementForm.quantity);
-    if (!movementForm.productId || !qty || qty <= 0) {
-      showToast("يرجى اختيار المنتج وإدخال الكمية", "error");
+    const qty = parseFloat(movementForm.quantity) || 0;
+    if (!movementForm.productId || qty <= 0 || !movementForm.shift) {
+      showToast("يرجى ملء الحقول المطلوبة (المنتج، الكمية، الوردية)", "error");
       return;
     }
+
     const success = productsService.addOutgoing(
       movementForm.productId,
       qty,
-      movementForm.date,
-      movementForm.notes,
+      movementForm.date || new Date().toISOString().split("T")[0],
+      movementForm.notes || "",
+      movementForm.shift as "morning" | "evening",
       currentUser?.id || "system",
     );
     if (!success) {
@@ -216,6 +230,7 @@ export default function WarehousePage() {
       supplierId: "",
       date: new Date().toISOString().split("T")[0],
       notes: "",
+      shift: "",
     });
 
   const openEditModal = (product: Product) => {
@@ -228,6 +243,7 @@ export default function WarehousePage() {
       sellingPrice: String(product.sellingPrice),
       newQuantity: String(product.currentQuantity),
       quantityNote: "",
+      shift: "morning",
     });
     setShowEditModal(true);
   };
@@ -239,7 +255,7 @@ export default function WarehousePage() {
       showToast("يرجى ملء جميع الحقول المطلوبة", "error");
       return;
     }
-    const newQty = parseInt(editForm.newQuantity) || 0;
+    const newQty = parseFloat(editForm.newQuantity) || 0;
     const qtyChanged = newQty !== editingProduct.currentQuantity;
 
     productsService.update(editingProduct.id, {
@@ -255,6 +271,7 @@ export default function WarehousePage() {
         editingProduct.id,
         newQty,
         editForm.quantityNote,
+        editForm.shift,
         currentUser?.id || "system",
       );
       refreshMovements();
@@ -524,51 +541,66 @@ export default function WarehousePage() {
                 المخزون الحالي
               </label>
               <input
-                type="number"
+                type="text"
+                inputMode="decimal"
                 value={productForm.openingQuantity}
-                onChange={(e) =>
+                onChange={(e) => {
+                  const value = e.target.value
+                    .replace(/[^0-9.,]/g, "") // السماح فقط بالأرقام والفاصلة/النقطة
+                    .replace(/,/g, "."); // تحويل الفاصلة إلى نقطة
                   setProductForm((f) => ({
                     ...f,
-                    openingQuantity: e.target.value,
-                  }))
-                }
-                min="0"
+                    openingQuantity: value,
+                  }));
+                }}
+                placeholder="0.00"
+                dir="rtl"
                 className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:outline-none focus:border-[#2d5a8e] transition-all text-sm text-center"
               />
             </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 text-right">
                 سعر البيع
               </label>
               <input
-                type="number"
+                type="text"
+                inputMode="decimal"
                 value={productForm.sellingPrice}
-                onChange={(e) =>
+                onChange={(e) => {
+                  const value = e.target.value
+                    .replace(/[^0-9.,]/g, "")
+                    .replace(/,/g, ".");
                   setProductForm((f) => ({
                     ...f,
-                    sellingPrice: e.target.value,
-                  }))
-                }
-                step="0.01"
-                min="0"
+                    sellingPrice: value,
+                  }));
+                }}
+                placeholder="0.00"
+                dir="rtl"
                 className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:outline-none focus:border-[#2d5a8e] transition-all text-sm text-center"
               />
             </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 text-right">
                 سعر الشراء
               </label>
               <input
-                type="number"
+                type="text"
+                inputMode="decimal"
                 value={productForm.purchasePrice}
-                onChange={(e) =>
+                onChange={(e) => {
+                  const value = e.target.value
+                    .replace(/[^0-9.,]/g, "")
+                    .replace(/,/g, ".");
                   setProductForm((f) => ({
                     ...f,
-                    purchasePrice: e.target.value,
-                  }))
-                }
-                step="0.01"
-                min="0"
+                    purchasePrice: value,
+                  }));
+                }}
+                placeholder="0.00"
+                dir="rtl"
                 className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:outline-none focus:border-[#2d5a8e] transition-all text-sm text-center"
               />
             </div>
@@ -598,7 +630,10 @@ export default function WarehousePage() {
               <select
                 value={movementForm.supplierId}
                 onChange={(e) =>
-                  setMovementForm((f) => ({ ...f, supplierId: e.target.value }))
+                  setMovementForm((f) => ({
+                    ...f,
+                    shift: e.target.value as "morning" | "evening",
+                  }))
                 }
                 dir="rtl"
                 className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:outline-none focus:border-[#2d5a8e] transition-all text-sm"
@@ -639,11 +674,12 @@ export default function WarehousePage() {
               </label>
               <input
                 type="number"
+                step="0.01"
+                min="0"
                 value={movementForm.quantity}
                 onChange={(e) =>
                   setMovementForm((f) => ({ ...f, quantity: e.target.value }))
                 }
-                min="1"
                 className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:outline-none focus:border-[#2d5a8e] transition-all text-sm text-center"
               />
             </div>
@@ -718,7 +754,8 @@ export default function WarehousePage() {
                 onChange={(e) =>
                   setMovementForm((f) => ({ ...f, quantity: e.target.value }))
                 }
-                min="1"
+                min="0"
+                step="0.01"
                 className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:outline-none focus:border-[#2d5a8e] transition-all text-sm text-center"
               />
             </div>
@@ -764,21 +801,30 @@ export default function WarehousePage() {
               />
             </div>
           </div>
+
           <div className="grid grid-cols-2 gap-4">
+            {/* الوردية الجديدة */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 text-right">
-                ملاحظات
+                الوردية
               </label>
-              <input
-                type="text"
-                value={movementForm.notes}
+              <select
+                value={movementForm.shift}
                 onChange={(e) =>
-                  setMovementForm((f) => ({ ...f, notes: e.target.value }))
+                  setMovementForm((f) => ({
+                    ...f,
+                    shift: e.target.value as "morning" | "evening",
+                  }))
                 }
-                dir="rtl"
                 className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:outline-none focus:border-[#2d5a8e] transition-all text-sm"
-              />
+                required
+              >
+                <option value="">اختر الوردية</option>
+                <option value="morning">صباحية</option>
+                <option value="evening">مسائية</option>
+              </select>
             </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 text-right">
                 التاريخ
@@ -793,6 +839,22 @@ export default function WarehousePage() {
               />
             </div>
           </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 text-right">
+              ملاحظات
+            </label>
+            <input
+              type="text"
+              value={movementForm.notes}
+              onChange={(e) =>
+                setMovementForm((f) => ({ ...f, notes: e.target.value }))
+              }
+              dir="rtl"
+              className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:outline-none focus:border-[#2d5a8e] transition-all text-sm"
+            />
+          </div>
+
           <button
             type="submit"
             className="w-full py-3 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-all"
@@ -916,22 +978,24 @@ export default function WarehousePage() {
             <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-3 border-r-4 border-green-500 pr-2">
               تعديل الكمية
             </h3>
+
             {editingProduct && (
               <div className="bg-gray-50 dark:bg-gray-700/30 rounded-lg p-3 mb-3 text-sm text-gray-600 dark:text-gray-400 flex items-center justify-between">
                 <span>
                   الكمية الحالية:{" "}
                   <span className="font-bold text-gray-800 dark:text-white">
-                    {editingProduct.currentQuantity}
+                    {Number(editingProduct.currentQuantity || 0).toFixed(2)}
                   </span>
                 </span>
                 <span>
                   رصيد افتتاحي:{" "}
                   <span className="font-bold text-gray-800 dark:text-white">
-                    {editingProduct.openingQuantity}
+                    {Number(editingProduct.openingQuantity || 0).toFixed(2)}
                   </span>
                 </span>
               </div>
             )}
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 text-right">
@@ -944,6 +1008,7 @@ export default function WarehousePage() {
                     setEditForm((f) => ({ ...f, newQuantity: e.target.value }))
                   }
                   min="0"
+                  step="0.01"
                   className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:outline-none focus:border-[#2d5a8e] transition-all text-sm text-center"
                 />
               </div>
@@ -963,20 +1028,21 @@ export default function WarehousePage() {
                 />
               </div>
             </div>
-            {editingProduct &&
-              parseInt(editForm.newQuantity) !==
-                editingProduct.currentQuantity && (
-                <p className="text-xs text-yellow-600 dark:text-yellow-500 mt-2 text-right">
-                  سيتم تسجيل تغيير الكمية في سجل الحركات (
-                  {parseInt(editForm.newQuantity) >
-                  editingProduct.currentQuantity
-                    ? "+"
-                    : ""}
-                  {parseInt(editForm.newQuantity) -
-                    editingProduct.currentQuantity}
-                  )
-                </p>
-              )}
+
+            {editingProduct && editForm.newQuantity && (
+              <p className="text-xs text-yellow-600 dark:text-yellow-500 mt-2 text-right">
+                سيتم تسجيل تغيير الكمية في سجل الحركات (
+                {Number(editForm.newQuantity) >
+                Number(editingProduct.currentQuantity)
+                  ? "+"
+                  : ""}
+                {(
+                  Number(editForm.newQuantity) -
+                  Number(editingProduct.currentQuantity)
+                ).toFixed(2)}
+                )
+              </p>
+            )}
           </div>
 
           <button

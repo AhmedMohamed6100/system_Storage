@@ -48,6 +48,7 @@ export interface SupplierPayment {
   notes: string;
   createdAt: string;
 }
+export type Shift = 'morning' | 'evening';
 
 export interface Movement {
   id: string;
@@ -63,6 +64,7 @@ export interface Movement {
   invoiceId?: string;
   date: string;
   notes: string;
+ shift?: Shift;     // ← أضف هذا السطر
   userId: string;
   createdAt: string;
 }

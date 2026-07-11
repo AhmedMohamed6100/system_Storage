@@ -285,32 +285,7 @@ export default function InvoicesPage() {
           </button>
         )}
       </div>
-      {/* كروت فوق التقرير اليومي */}
-      {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-5">
-          <p className="text-sm text-gray-500">إجمالي الفواتير</p>
 
-          <p className="text-2xl font-bold text-blue-600 mt-2">
-            {totalInvoicesCount}
-          </p>
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-5">
-          <p className="text-sm text-gray-500">إجمالي المبيعات</p>
-
-          <p className="text-2xl font-bold text-green-600 mt-2">
-            {formatCurrency(totalDailySales)}
-          </p>
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-5">
-          <p className="text-sm text-gray-500">إجمالي صافي الربح</p>
-
-          <p className="text-2xl font-bold text-emerald-600 mt-2">
-            {formatCurrency(totalDailyProfit)}
-          </p>
-        </div>
-      </div> */}
       {/* Table */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
         <table className="w-full text-sm">
@@ -597,7 +572,8 @@ export default function InvoicesPage() {
                     onChange={(e) =>
                       updateItem(idx, "quantity", e.target.value)
                     }
-                    min="1"
+                    min="0"
+                    step="0.001"
                     className="w-full px-2 py-1.5 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:outline-none focus:border-[#2d5a8e] text-sm text-center"
                   />
                 </div>

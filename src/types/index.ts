@@ -141,4 +141,5 @@ export interface DailyReport {
   netProfit: number;
   notes: string;
   createdAt: string;
+  shift: string;
 }

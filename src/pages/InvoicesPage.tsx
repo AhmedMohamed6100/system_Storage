@@ -50,6 +50,7 @@ export default function InvoicesPage() {
     totalSales: "",
     expenses: "",
     notes: "",
+    shift: "",
   });
   const filteredInvoices = useMemo(() => {
     if (!searchDate) return invoices;
@@ -137,22 +138,13 @@ export default function InvoicesPage() {
       totalSales: report.totalSales.toString(),
       expenses: report.expenses.toString(),
       notes: report.notes,
+      shift: report.shift,
     });
 
     setShowDailyModal(true);
   };
   const handleDailyReport = (e: React.FormEvent) => {
     e.preventDefault();
-
-    // منع تكرار التاريخ عند الإضافة فقط
-    if (!editingReportId) {
-      const exists = dailyReports.some((r) => r.date === dailyReport.date);
-
-      if (exists) {
-        showToast("يوجد تقرير لهذا التاريخ بالفعل", "error");
-        return;
-      }
-    }
 
     const reportData = {
       date: dailyReport.date,
@@ -161,6 +153,7 @@ export default function InvoicesPage() {
       expenses: Number(dailyReport.expenses),
       netProfit: dailyNetProfit,
       notes: dailyReport.notes,
+      shift: dailyReport.shift,
     };
 
     if (editingReportId) {
@@ -176,7 +169,6 @@ export default function InvoicesPage() {
     refreshDailyReports();
 
     setEditingReportId(null);
-
     setShowDailyModal(false);
 
     setDailyReport({
@@ -185,6 +177,7 @@ export default function InvoicesPage() {
       totalSales: "",
       expenses: "",
       notes: "",
+      shift: "",
     });
   };
 
@@ -409,6 +402,7 @@ export default function InvoicesPage() {
               <th className="px-4 py-3 text-right">المبيعات</th>
               <th className="px-4 py-3 text-right">المصاريف</th>
               <th className="px-4 py-3 text-right">صافي الربح</th>
+              <th className="px-4 py-3 text-right">الشيفت</th>
               <th className="px-4 py-3 text-right">ملاحظات</th>
               <th className="px-4 py-3 text-center">خيارات</th>
             </tr>
@@ -454,6 +448,7 @@ export default function InvoicesPage() {
                       {formatCurrency(report.netProfit)}
                     </td>
 
+                    <td className="px-4 py-3">{report.shift || "-"}</td>
                     <td className="px-4 py-3">{report.notes || "-"}</td>
                     <td className="px-4 py-3">
                       <div className="flex justify-center gap-2">
@@ -685,22 +680,42 @@ export default function InvoicesPage() {
             </div>
 
             <div>
-              <label className="block text-sm mb-1 text-right">
-                عدد الفواتير
-              </label>
+              <label className="block text-sm mb-1 text-right">الوردية</label>
 
-              <input
-                type="number"
-                value={dailyReport.invoicesCount}
+              <select
+                value={dailyReport.shift}
                 onChange={(e) =>
                   setDailyReport((f) => ({
                     ...f,
-                    invoicesCount: e.target.value,
+                    shift: e.target.value,
                   }))
                 }
                 className="w-full px-3 py-2 border rounded-lg"
-              />
+              >
+                <option value="">اختر الوردية</option>
+                <option value="صباحية">صباحية</option>
+                <option value="مسائية">مسائية</option>
+                <option value="ليلية">ليلية</option>
+              </select>
             </div>
+          </div>
+
+          <div>
+            <label className="block text-sm mb-1 text-right">
+              عدد الفواتير
+            </label>
+
+            <input
+              type="number"
+              value={dailyReport.invoicesCount}
+              onChange={(e) =>
+                setDailyReport((f) => ({
+                  ...f,
+                  invoicesCount: e.target.value,
+                }))
+              }
+              className="w-full px-3 py-2 border rounded-lg"
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-4">

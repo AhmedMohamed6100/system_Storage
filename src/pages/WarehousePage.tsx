@@ -1091,7 +1091,7 @@ export default function WarehousePage() {
       >
         {selectedBatchProduct?.batches &&
         selectedBatchProduct.batches.length > 0 ? (
-          <div className="space-y-3">
+          <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 scrollbar-thin">
             {selectedBatchProduct.batches.map((batch, index) => (
               <div
                 key={batch.id}

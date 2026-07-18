@@ -475,11 +475,11 @@ export default function PurchasesPage() {
         size="lg"
       >
         {selectedPurchase && (
-          <div className="space-y-4 text-right">
+          <div className="space-y-4 text-right text-gray-800 dark:text-gray-200">
             <div>
               <p>
                 المورد:{" "}
-                <strong>
+                <strong className="text-gray-900 dark:text-white">
                   {
                     suppliers.find((s) => s.id === selectedPurchase.supplierId)
                       ?.name
@@ -487,55 +487,83 @@ export default function PurchasesPage() {
                 </strong>
               </p>
 
-              <p>
-                التاريخ:
-                {formatDate(selectedPurchase.invoiceDate)}
+              <p className="mt-2">
+                التاريخ: {formatDate(selectedPurchase.invoiceDate)}
               </p>
             </div>
 
-            <table className="w-full border">
-              <thead>
-                <tr className="bg-gray-100">
-                  <th className="p-2">الصنف</th>
-                  <th>الكمية</th>
-                  <th>السعر</th>
-                  <th>الإجمالي</th>
-                </tr>
-              </thead>
+            <div className="overflow-x-auto">
+              <table className="w-full border border-gray-200 dark:border-gray-700">
+                <thead>
+                  <tr className="bg-gray-100 dark:bg-gray-700">
+                    <th className="p-2 text-gray-700 dark:text-gray-200">
+                      الصنف
+                    </th>
 
-              <tbody>
-                {selectedPurchase.items.map((item: any) => {
-                  const product = products.find((p) => p.id === item.productId);
+                    <th className="text-gray-700 dark:text-gray-200">الكمية</th>
 
-                  return (
-                    <tr key={item.productId} className="border-t">
-                      <td className="p-2">{product?.name}</td>
+                    <th className="text-gray-700 dark:text-gray-200">السعر</th>
 
-                      <td>{item.quantity}</td>
+                    <th className="text-gray-700 dark:text-gray-200">
+                      الإجمالي
+                    </th>
+                  </tr>
+                </thead>
 
-                      <td>{formatCurrency(item.unitPrice)}</td>
+                <tbody>
+                  {selectedPurchase.items.map((item: any) => {
+                    const product = products.find(
+                      (p) => p.id === item.productId,
+                    );
 
-                      <td>{formatCurrency(item.total)}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                    return (
+                      <tr
+                        key={item.productId}
+                        className="
+                    border-t 
+                    border-gray-200 
+                    dark:border-gray-700
+                    hover:bg-gray-50
+                    dark:hover:bg-gray-700/40
+                  "
+                      >
+                        <td className="p-2">{product?.name}</td>
 
-            <div className="border-t pt-3">
+                        <td>{item.quantity}</td>
+
+                        <td>{formatCurrency(item.unitPrice)}</td>
+
+                        <td className="font-medium">
+                          {formatCurrency(item.total)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            <div
+              className="
+        border-t 
+        border-gray-200 
+        dark:border-gray-700 
+        pt-3
+      "
+            >
               <p>
-                الإجمالي:
-                <strong>{formatCurrency(selectedPurchase.total)}</strong>
+                الإجمالي:{" "}
+                <strong className="text-gray-900 dark:text-white">
+                  {formatCurrency(selectedPurchase.total)}
+                </strong>
               </p>
 
-              <p className="text-green-600">
-                المدفوع:
-                {formatCurrency(selectedPurchase.amountPaid)}
+              <p className="text-green-600 dark:text-green-400 mt-2">
+                المدفوع: {formatCurrency(selectedPurchase.amountPaid)}
               </p>
 
-              <p className="text-red-600">
-                المتبقي:
-                {formatCurrency(selectedPurchase.remainingDebt)}
+              <p className="text-red-600 dark:text-red-400 mt-2">
+                المتبقي: {formatCurrency(selectedPurchase.remainingDebt)}
               </p>
             </div>
           </div>

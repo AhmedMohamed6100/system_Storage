@@ -27,6 +27,9 @@ export default function PurchasesPage() {
   const { showToast } = useToast();
 
   const [showModal, setShowModal] = useState(false);
+  const [searchSupplier, setSearchSupplier] = useState("");
+  const [selectedPurchase, setSelectedPurchase] = useState<any>(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [supplierId, setSupplierId] = useState("");
   const [invoiceDate, setInvoiceDate] = useState(today());
   const [paymentDate, setPaymentDate] = useState("");
@@ -131,6 +134,15 @@ export default function PurchasesPage() {
     () => purchases.reduce((s, p) => s + p.remainingDebt, 0),
     [purchases],
   );
+  const filteredPurchases = useMemo(() => {
+    return purchases.filter((p) => {
+      const supplier = suppliers.find((s) => s.id === p.supplierId);
+
+      return supplier?.name
+        .toLowerCase()
+        .includes(searchSupplier.toLowerCase());
+    });
+  }, [purchases, suppliers, searchSupplier]);
 
   return (
     <div className="animate-fade-in">
@@ -176,6 +188,19 @@ export default function PurchasesPage() {
           </p>
         </div>
       </div>
+      {/* سيرش */}
+      <div className="mb-4">
+        <input
+          type="text"
+          placeholder="بحث باسم المورد..."
+          value={searchSupplier}
+          onChange={(e) => setSearchSupplier(e.target.value)}
+          dir="rtl"
+          className="w-full px-4 py-2 border rounded-lg 
+    bg-white dark:bg-gray-700 
+    text-gray-800 dark:text-white"
+        />
+      </div>
 
       {/* Table */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
@@ -213,12 +238,18 @@ export default function PurchasesPage() {
                 </td>
               </tr>
             ) : (
-              purchases.map((p, idx) => {
+              filteredPurchases.map((p, idx) => {
                 const supplier = suppliers.find((s) => s.id === p.supplierId);
                 return (
                   <tr
                     key={p.id}
-                    className="border-t border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/20 transition-colors"
+                    onClick={() => {
+                      setSelectedPurchase(p);
+                      setShowDetailsModal(true);
+                    }}
+                    className="cursor-pointer border-t border-gray-100 
+ dark:border-gray-700 hover:bg-gray-50 
+ dark:hover:bg-gray-700/20 transition-colors"
                   >
                     <td className="px-4 py-3 text-gray-500">{idx + 1}</td>
                     <td className="px-4 py-3 font-medium text-gray-800 dark:text-gray-200">
@@ -435,6 +466,80 @@ export default function PurchasesPage() {
             حفظ الفاتورة
           </button>
         </form>
+      </Modal>
+      {/* Purchase Details Modal */}
+      <Modal
+        isOpen={showDetailsModal}
+        onClose={() => setShowDetailsModal(false)}
+        title="تفاصيل فاتورة الشراء"
+        size="lg"
+      >
+        {selectedPurchase && (
+          <div className="space-y-4 text-right">
+            <div>
+              <p>
+                المورد:{" "}
+                <strong>
+                  {
+                    suppliers.find((s) => s.id === selectedPurchase.supplierId)
+                      ?.name
+                  }
+                </strong>
+              </p>
+
+              <p>
+                التاريخ:
+                {formatDate(selectedPurchase.invoiceDate)}
+              </p>
+            </div>
+
+            <table className="w-full border">
+              <thead>
+                <tr className="bg-gray-100">
+                  <th className="p-2">الصنف</th>
+                  <th>الكمية</th>
+                  <th>السعر</th>
+                  <th>الإجمالي</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {selectedPurchase.items.map((item: any) => {
+                  const product = products.find((p) => p.id === item.productId);
+
+                  return (
+                    <tr key={item.productId} className="border-t">
+                      <td className="p-2">{product?.name}</td>
+
+                      <td>{item.quantity}</td>
+
+                      <td>{formatCurrency(item.unitPrice)}</td>
+
+                      <td>{formatCurrency(item.total)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+
+            <div className="border-t pt-3">
+              <p>
+                الإجمالي:
+                <strong>{formatCurrency(selectedPurchase.total)}</strong>
+              </p>
+
+              <p className="text-green-600">
+                المدفوع:
+                {formatCurrency(selectedPurchase.amountPaid)}
+              </p>
+
+              <p className="text-red-600">
+                المتبقي:
+                {formatCurrency(selectedPurchase.remainingDebt)}
+              </p>
+            </div>
+          </div>
+        )}
       </Modal>
     </div>
   );

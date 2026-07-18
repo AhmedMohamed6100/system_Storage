@@ -1101,7 +1101,7 @@ export default function WarehousePage() {
                   <span>الدفعة #{index + 1}</span>
 
                   <span className="font-bold">
-                    {formatQuantity(batch.quantity)}
+                   {formatQuantity(batch.remainingQuantity)}
                   </span>
                 </div>
 

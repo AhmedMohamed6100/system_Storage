@@ -2,7 +2,7 @@ export interface User {
   id: string;
   username: string;
   password: string;
-  role: 'viewer' | 'editor' | 'inventory_manager' | 'administrator';
+  role: "viewer" | "editor" | "inventory_manager" | "administrator";
   createdAt: string;
 }
 
@@ -27,6 +27,7 @@ export interface Product {
   sellingPrice: number;
   openingQuantity: number;
   currentQuantity: number;
+  batches: ProductBatch[];
   createdAt: string;
 }
 
@@ -48,11 +49,11 @@ export interface SupplierPayment {
   notes: string;
   createdAt: string;
 }
-export type Shift = 'morning' | 'evening';
+export type Shift = "morning" | "evening";
 
 export interface Movement {
   id: string;
-  type: 'incoming' | 'outgoing' | 'manual_edit' | 'purchase' | 'invoice';
+  type: "incoming" | "outgoing" | "manual_edit" | "purchase" | "invoice";
   productId: string;
   categoryId: string;
   quantity: number;
@@ -64,7 +65,7 @@ export interface Movement {
   invoiceId?: string;
   date: string;
   notes: string;
- shift?: Shift;     // ← أضف هذا السطر
+  shift?: Shift; // ← أضف هذا السطر
   userId: string;
   createdAt: string;
 }
@@ -109,7 +110,7 @@ export interface InvoiceItem {
 
 export interface Transfer {
   id: string;
-  type: 'receive' | 'send';
+  type: "receive" | "send";
   sender: string;
   receiver: string;
   phone: string;
@@ -142,4 +143,13 @@ export interface DailyReport {
   notes: string;
   createdAt: string;
   shift: string;
+}
+export interface ProductBatch {
+  id: string;
+  quantity: number;
+  productId: string
+  remainingQuantity: number;
+  purchasePrice: number;
+  supplierId?: string;
+  date: string;
 }

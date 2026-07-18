@@ -16,7 +16,7 @@ import { useToast } from "../contexts/ToastContext";
 import { productsService } from "../services/productsService";
 import Modal from "../components/common/Modal";
 import ConfirmDialog from "../components/common/ConfirmDialog";
-import { formatCurrency } from "../utils/formatters";
+import { formatCurrency, generateId } from "../utils/formatters";
 import type { Product } from "../types";
 
 interface ProductForm {
@@ -83,6 +83,9 @@ export default function WarehousePage() {
   const [deleteProductId, setDeleteProductId] = useState<string | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [showBatchesModal, setShowBatchesModal] = useState(false);
+  const [selectedBatchProduct, setSelectedBatchProduct] =
+    useState<Product | null>(null);
   const [editForm, setEditForm] = useState<EditForm>({
     name: "",
     categoryId: "",
@@ -161,6 +164,20 @@ export default function WarehousePage() {
       sellingPrice: parseFloat(productForm.sellingPrice) || 0,
       openingQuantity: qty,
       currentQuantity: qty,
+
+      batches:
+        qty > 0
+          ? [
+              {
+                id: generateId(),
+                productId: productForm.categoryId,
+                quantity: qty,
+                remainingQuantity: qty,
+                purchasePrice: parseFloat(productForm.purchasePrice) || 0,
+                date: new Date().toISOString().split("T")[0],
+              },
+            ]
+          : [],
     });
     refreshProducts();
     showToast("تم إضافة المادة بنجاح", "success");
@@ -439,6 +456,16 @@ export default function WarehousePage() {
                                   </td>
                                   <td className="px-4 py-3">
                                     <div className="flex items-center gap-1">
+                                      <button
+                                        onClick={() => {
+                                          setSelectedBatchProduct(p);
+                                          setShowBatchesModal(true);
+                                        }}
+                                        className="px-2 py-1 text-xs text-purple-600 hover:bg-purple-50 rounded-lg"
+                                      >
+                                        الدفعات
+                                      </button>
+
                                       <button
                                         onClick={() => openEditModal(p)}
                                         className="p-1.5 text-blue-500 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
@@ -1053,7 +1080,47 @@ export default function WarehousePage() {
           </button>
         </form>
       </Modal>
+      <Modal
+        isOpen={showBatchesModal}
+        onClose={() => {
+          setShowBatchesModal(false);
+          setSelectedBatchProduct(null);
+        }}
+        title={`دفعات ${selectedBatchProduct?.name || ""}`}
+        size="md"
+      >
+        {selectedBatchProduct?.batches &&
+        selectedBatchProduct.batches.length > 0 ? (
+          <div className="space-y-3">
+            {selectedBatchProduct.batches.map((batch, index) => (
+              <div
+                key={batch.id}
+                className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4"
+              >
+                <div className="flex justify-between">
+                  <span>الدفعة #{index + 1}</span>
 
+                  <span className="font-bold">
+                    {formatQuantity(batch.quantity)}
+                  </span>
+                </div>
+
+                <div className="text-sm text-gray-500 mt-2">
+                  سعر الشراء: {formatCurrency(batch.purchasePrice)}
+                </div>
+
+                <div className="text-sm text-gray-500">
+                  التاريخ: {batch.date}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center text-gray-400 py-6">
+            لا توجد دفعات لهذا المنتج
+          </div>
+        )}
+      </Modal>
       <ConfirmDialog
         isOpen={!!deleteProductId}
         onClose={() => setDeleteProductId(null)}

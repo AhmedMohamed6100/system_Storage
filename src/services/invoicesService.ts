@@ -1,8 +1,8 @@
-import { Invoice } from '../types';
-import { getItem, setItem, STORAGE_KEYS } from '../utils/storage';
-import { generateId } from '../utils/formatters';
-import { productsService } from './productsService';
-import { movementsService } from './movementsService';
+import { Invoice } from "../types";
+import { getItem, setItem, STORAGE_KEYS } from "../utils/storage";
+import { generateId } from "../utils/formatters";
+import { productsService } from "./productsService";
+import { movementsService } from "./movementsService";
 
 export const invoicesService = {
   getAll(): Invoice[] {
@@ -10,24 +10,58 @@ export const invoicesService = {
   },
 
   getById(id: string): Invoice | undefined {
-    return this.getAll().find(inv => inv.id === id);
+    return this.getAll().find((inv) => inv.id === id);
   },
 
-  add(data: Omit<Invoice, 'id' | 'createdAt'>, userId: string): Invoice {
+  add(data: Omit<Invoice, "id" | "createdAt">, userId: string): Invoice {
     const invoices = this.getAll();
-    const invoice: Invoice = { ...data, id: generateId(), createdAt: new Date().toISOString() };
+    const invoice: Invoice = {
+      ...data,
+      id: generateId(),
+      createdAt: new Date().toISOString(),
+    };
     setItem(STORAGE_KEYS.INVOICES, [...invoices, invoice]);
 
-    data.items.forEach(item => {
+    data.items.forEach((item) => {
       const products = productsService.getAll();
-      const idx = products.findIndex(p => p.id === item.productId);
+      const idx = products.findIndex((p) => p.id === item.productId);
       if (idx !== -1) {
         const prev = products[idx].currentQuantity;
+
+        // هنا حطها
+        if (!products[idx].batches || products[idx].batches.length === 0) {
+          products[idx].batches = [];
+        }
+
+        let remainingQty = item.quantity;
+
+        products[idx].batches = (products[idx].batches || []).map((batch) => {
+          if (remainingQty <= 0) return batch;
+
+          const deducted = Math.min(batch.quantity, remainingQty);
+
+          remainingQty -= deducted;
+
+          return {
+            ...batch,
+            quantity: batch.quantity - deducted,
+          };
+        });
+
+        products[idx].batches = products[idx].batches.filter(
+          (batch) => batch.quantity > 0,
+        );
+
         products[idx].currentQuantity -= item.quantity;
-        if (products[idx].currentQuantity < 0) products[idx].currentQuantity = 0;
+
+        if (products[idx].currentQuantity < 0) {
+          products[idx].currentQuantity = 0;
+        }
+
         setItem(STORAGE_KEYS.PRODUCTS, products);
+
         movementsService.record({
-          type: 'invoice',
+          type: "invoice",
           productId: item.productId,
           categoryId: products[idx].categoryId,
           quantity: item.quantity,
